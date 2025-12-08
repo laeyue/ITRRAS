@@ -57,6 +57,35 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+
+  .msu-iit {
+    --background: 0 0% 98%;
+    --foreground: 355 70% 15%;
+    /* Dark Maroon Text */
+    --card: 0 0% 100%;
+    --card-foreground: 355 70% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 355 70% 15%;
+    --primary: 355 79% 25%;
+    /* Maroon #720e1e (approx) */
+    --primary-foreground: 45 100% 51%;
+    /* Gold Text */
+    --secondary: 45 100% 51%;
+    /* Gold #ffcc00 */
+    --secondary-foreground: 355 79% 25%;
+    /* Maroon Text */
+    --muted: 45 40% 90%;
+    /* Light Gold */
+    --muted-foreground: 355 40% 40%;
+    --accent: 45 60% 90%;
+    --accent-foreground: 355 79% 25%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 355 30% 80%;
+    --input: 355 30% 80%;
+    --ring: 355 79% 25%;
+    --radius: 0.5rem;
+  }
 }
 
 @layer base {

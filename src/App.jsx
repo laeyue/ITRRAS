@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Paperclip, Eye, LayoutDashboard, FileText, Settings, User, LogOut, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { Paperclip, Eye, LayoutDashboard, FileText, Settings, User, LogOut, CheckCircle, AlertCircle, Clock, Palette } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -35,7 +35,24 @@ export default function App() {
   const [requests, setRequests] = useState([])
   const [loadingAction, setLoadingAction] = useState(null)
   const [selectedRequest, setSelectedRequest] = useState(null)
+
   const [requestDocuments, setRequestDocuments] = useState([])
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
+
+  // Apply theme to HTML element
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.remove('light', 'dark', 'msu-iit')
+
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      root.classList.add(systemTheme)
+    } else {
+      root.classList.add(theme)
+    }
+
+    localStorage.setItem('theme', theme)
+  }, [theme])
 
   useEffect(() => {
     if (selectedRequest) {
@@ -116,8 +133,22 @@ export default function App() {
   useEffect(() => {
     if (view === 'my-files' && session) {
       fetchMyFiles()
+    } else if (view === 'tracking' && session) {
+      fetchAuditLogs()
     }
   }, [view, session])
+
+  const [auditLogs, setAuditLogs] = useState([])
+
+  const fetchAuditLogs = async () => {
+    const { data } = await supabase
+      .from('approvals')
+      .select('*, profiles:approver_id(full_name, role), travel_requests:request_id(title)')
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (data) setAuditLogs(data)
+  }
 
   const submitVerdict = async (requestId, currentOffice, verdict) => {
     if (!profile) return
@@ -189,9 +220,6 @@ export default function App() {
           <Button variant="ghost" className="w-full justify-start" onClick={() => setView('my-files')}>
             My Files
           </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            Reports
-          </Button>
         </nav>
         <div className="p-4 border-t">
           <div className="flex items-center gap-3 mb-4 px-2">
@@ -216,7 +244,25 @@ export default function App() {
         <header className="h-16 border-b flex items-center justify-between px-8 bg-card/50 backdrop-blur top-0 sticky z-10">
           <h2 className="text-lg font-semibold capitalize">{view.replace('-', ' ')}</h2>
           <div className="flex items-center gap-4">
-            {/* Role Switcher Removed */}
+            {profile && ['Dept. Head', 'Dean', 'KTTO Staff', 'OVCRE Staff', 'OVCAA/OVCPD', 'Finance', 'Chancellor'].includes(profile.role) && (
+              <Button variant="ghost" size="icon" onClick={() => setView('tracking')} title="Audit Tracking">
+                <Clock className="h-5 w-5" />
+              </Button>
+            )}
+            <Select value={theme} onValueChange={setTheme}>
+              <SelectTrigger className="w-[140px]">
+                <div className="flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  <SelectValue placeholder="Theme" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">Light</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+                <SelectItem value="msu-iit">MSU-IIT</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Button onClick={() => setView('new-request')}>+ Quick Create</Button>
           </div>
         </header>
@@ -275,6 +321,54 @@ export default function App() {
                     </TableBody>
                   </Table>
                 )}
+              </CardContent>
+            </Card>
+          ) : view === 'tracking' ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Audit Tracking</CardTitle>
+                <CardDescription>Recent approval actions across the system.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Approver</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Action</TableHead>
+                      <TableHead>Request</TableHead>
+                      <TableHead className="text-right">Comments</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {auditLogs.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground h-24">No recent activity recorded.</TableCell>
+                      </TableRow>
+                    ) : (
+                      auditLogs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="text-muted-foreground text-xs">
+                            <div className="flex flex-col">
+                              <span>{new Date(log.created_at).toLocaleDateString()}</span>
+                              <span>{new Date(log.created_at).toLocaleTimeString()}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium">{log.profiles?.full_name || 'Unknown'}</TableCell>
+                          <TableCell>{log.office}</TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(log.status)}>{log.status}</Badge>
+                          </TableCell>
+                          <TableCell>{log.travel_requests?.title || 'Deleted Request'}</TableCell>
+                          <TableCell className="text-right text-muted-foreground max-w-[200px] truncate" title={log.comments}>
+                            {log.comments}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           ) : (
