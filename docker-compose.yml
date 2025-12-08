@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: c1redo
+    build:
+      context: .
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    restart: unless-stopped
+    networks:
+      - npm_network
+
+networks:
+  npm_network:
+    external: true
