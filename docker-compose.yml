@@ -10,8 +10,8 @@ services:
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
     restart: unless-stopped
     networks:
-      - npm_network
+      - npm_default
 
 networks:
-  npm_network:
+  npm_default:
     external: true
