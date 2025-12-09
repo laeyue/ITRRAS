@@ -188,9 +188,13 @@ export default function App() {
   })
 
   // Pending for stats
-  const pendingCount = myRequests.filter(r => r.status.includes('Pending')).length
-  const approvedCount = myRequests.filter(r => r.status === 'Approved').length
-  const returnedCount = myRequests.filter(r => r.status === 'Returned').length
+  const isSystemAdmin = ['Chancellor', 'Super Admin'].includes(effectiveRole)
+  const statsSource = isSystemAdmin ? requests : myRequests
+
+  const totalCount = statsSource.length
+  const pendingCount = statsSource.filter(r => r.status.includes('Pending')).length
+  const approvedCount = statsSource.filter(r => r.status === 'Approved').length
+  const returnedCount = statsSource.filter(r => r.status === 'Returned').length
 
   const getStatusBadgeVariant = (status) => {
     if (status === 'Approved') return 'success'
@@ -418,30 +422,32 @@ export default function App() {
                             <TableCell>{req.profiles?.full_name}</TableCell>
                             <TableCell>{req.type}</TableCell>
                             <TableCell>₱{req.budget_estimate}</TableCell>
-                            <TableCell className="text-right space-x-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setSelectedRequest(req)}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => submitVerdict(req.id, req.current_office, 'Returned')}
-                                disabled={loadingAction === req.id}
-                              >
-                                Return
-                              </Button>
-                              <Button
-                                size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-700"
-                                onClick={() => submitVerdict(req.id, req.current_office, 'Approved')}
-                                disabled={loadingAction === req.id}
-                              >
-                                Approve
-                              </Button>
+                            <TableCell>
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelectedRequest(req)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => submitVerdict(req.id, req.current_office, 'Returned')}
+                                  disabled={loadingAction === req.id}
+                                >
+                                  Return
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-emerald-600 hover:bg-emerald-700"
+                                  onClick={() => submitVerdict(req.id, req.current_office, 'Approved')}
+                                  disabled={loadingAction === req.id}
+                                >
+                                  Approve
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -459,8 +465,8 @@ export default function App() {
                     <FileText className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{myRequests.length}</div>
-                    <p className="text-xs text-muted-foreground">Lifetime submissions</p>
+                    <div className="text-2xl font-bold">{totalCount}</div>
+                    <p className="text-xs text-muted-foreground">{isSystemAdmin ? 'System-wide submissions' : 'Lifetime submissions'}</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -495,8 +501,65 @@ export default function App() {
                 </Card>
               </div>
 
+              {/* Chancellor View: All Requests */}
+              {['Chancellor', 'Super Admin'].includes(effectiveRole) && (
+                <Card className="mt-8 border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <LayoutDashboard className="h-5 w-5 text-primary" />
+                      System-Wide Request Overview
+                    </CardTitle>
+                    <CardDescription>Full visibility of all travel requests currently in the system.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Requester</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Destination</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Current Office</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {requests.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No requests found in the system.</TableCell>
+                          </TableRow>
+                        ) : (
+                          requests.map((req) => (
+                            <TableRow key={req.id}>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{req.profiles?.full_name}</span>
+                                  <span className="text-xs text-muted-foreground">{req.profiles?.department}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-medium">{req.title}</TableCell>
+                              <TableCell>{req.destination}</TableCell>
+                              <TableCell>{req.start_date} to {req.end_date}</TableCell>
+                              <TableCell>
+                                <Badge variant={getStatusBadgeVariant(req.status)}>{req.status}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right text-muted-foreground">{req.current_office}</TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="sm" onClick={() => setSelectedRequest(req)}>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          )))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* My Requests Table */}
-              <Card>
+              <Card className="mt-8">
                 <CardHeader>
                   <CardTitle>My Requests</CardTitle>
                   <CardDescription>A list of your recent travel requests.</CardDescription>
