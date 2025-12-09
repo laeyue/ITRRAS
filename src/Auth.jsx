@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 
-const ROLES = ['Faculty', 'Dept. Head', 'Dean', 'KTTO Staff', 'OVCRE Staff', 'OVCAA/OVCPD', 'Finance', 'Chancellor']
+const ROLES = ['Faculty', 'Dept. Head', 'Dean', 'KTTO Staff', 'OVCRE Staff', 'OVCAA/OVCPD', 'Finance', 'Chancellor', 'Super Admin']
 
 export default function Auth() {
     const [loading, setLoading] = useState(false)

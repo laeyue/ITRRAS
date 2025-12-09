@@ -38,6 +38,9 @@ export default function App() {
 
   const [requestDocuments, setRequestDocuments] = useState([])
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
+  const [simulatedRole, setSimulatedRole] = useState(null)
+
+  const effectiveRole = (profile?.role === 'Super Admin' && simulatedRole) ? simulatedRole : profile?.role
 
   // Apply theme to HTML element
   useEffect(() => {
@@ -159,7 +162,7 @@ export default function App() {
         approver_id: session.user.id,
         office: currentOffice,
         status: verdict,
-        comments: `${verdict} by ${profile.role}`
+        comments: `${verdict} by ${effectiveRole}${profile.role === 'Super Admin' ? ' (Admin Override)' : ''}`
       })
       if (error) throw error
       await new Promise(r => setTimeout(r, 500))
@@ -181,7 +184,7 @@ export default function App() {
 
   const pendingApprovals = requests.filter(r => {
     if (['Approved', 'Rejected', 'Returned'].includes(r.status)) return false
-    return OFFICE_ROLE_MAP[r.current_office] === profile?.role
+    return OFFICE_ROLE_MAP[r.current_office] === effectiveRole
   })
 
   // Pending for stats
@@ -244,7 +247,7 @@ export default function App() {
         <header className="h-16 border-b flex items-center justify-between px-8 bg-card/50 backdrop-blur top-0 sticky z-10">
           <h2 className="text-lg font-semibold capitalize">{view.replace('-', ' ')}</h2>
           <div className="flex items-center gap-4">
-            {profile && ['Dept. Head', 'Dean', 'KTTO Staff', 'OVCRE Staff', 'OVCAA/OVCPD', 'Finance', 'Chancellor'].includes(profile.role) && (
+            {profile && ['Dept. Head', 'Dean', 'KTTO Staff', 'OVCRE Staff', 'OVCAA/OVCPD', 'Finance', 'Chancellor', 'Super Admin'].includes(profile.role) && (
               <Button variant="ghost" size="icon" onClick={() => setView('tracking')} title="Audit Tracking">
                 <Clock className="h-5 w-5" />
               </Button>
@@ -262,6 +265,20 @@ export default function App() {
                 <SelectItem value="msu-iit">MSU-IIT</SelectItem>
               </SelectContent>
             </Select>
+
+            {profile && profile.role === 'Super Admin' && (
+              <Select value={simulatedRole || ''} onValueChange={setSimulatedRole}>
+                <SelectTrigger className="w-[180px] border-dashed border-yellow-500 text-yellow-500">
+                  <User className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Simulate Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLES.filter(r => r !== 'Super Admin').map(r => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             <Button onClick={() => setView('new-request')}>+ Quick Create</Button>
           </div>
